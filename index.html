@@ -5,96 +5,32 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <title>软考中项·共享题库</title>
-<style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#047857;--bad:#b91c1c;--warn:#b45309}
-*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
-button,input,select,textarea{font:inherit} .app{max-width:760px;margin:0 auto;padding-bottom:88px}
-.header{position:sticky;top:0;z-index:10;background:rgba(245,247,251,.94);backdrop-filter:blur(12px);padding:14px 16px 10px;border-bottom:1px solid var(--line)}
-.title{font-size:18px;font-weight:800} .sub{font-size:12px;color:var(--muted);margin-top:3px}
-.page{display:none;padding:14px 14px 30px} .page.active{display:block}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 18px rgba(0,0,0,.035)}
-.hero{padding:20px} .big{font-size:32px;font-weight:900;letter-spacing:-1px} .muted{color:var(--muted)} .row{display:flex;gap:10px;flex-wrap:wrap}
-.metric{flex:1;min-width:100px;background:#f9fafb;border-radius:12px;padding:12px} .metric b{display:block;font-size:20px;margin-top:3px}
-.btn{border:0;border-radius:12px;padding:12px 14px;background:var(--accent);color:white;font-weight:700;cursor:pointer}
-.btn.secondary{background:#eef2f7;color:#111827} .btn.good{background:#065f46} .btn.danger{background:#991b1b}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .chapter{text-align:left;background:#fff;border:1px solid var(--line);padding:13px;border-radius:12px}
-.chapter small{display:block;color:var(--muted);margin-top:5px}
-.qtitle{font-size:18px;line-height:1.55;font-weight:750;margin-bottom:14px} .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;margin:9px 0;line-height:1.45}
-.opt.selected{border:2px solid #111827} .opt.correct{border-color:#059669;background:#ecfdf5} .opt.wrong{border-color:#dc2626;background:#fef2f2}
-.answer{border-radius:12px;padding:12px;background:#f8fafc;margin-top:12px;line-height:1.6} .goodtxt{color:var(--good);font-weight:800} .badtxt{color:var(--bad);font-weight:800}
-.toolbar{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:10px 0} .timer{font-variant-numeric:tabular-nums;font-weight:900}
-.palette{display:grid;grid-template-columns:repeat(10,1fr);gap:5px} .palette button{aspect-ratio:1;border:1px solid var(--line);background:white;border-radius:7px;font-size:11px;padding:0}
-.palette button.done{background:#e5e7eb} .palette button.cur{outline:2px solid #111827}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center;z-index:20}
-.nav{width:min(760px,100%);display:grid;grid-template-columns:repeat(6,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-.nav button{border:0;background:transparent;padding:8px 2px;font-size:11px;color:#4b5563} .nav button.active{font-weight:800;color:#111827}
-.tag{display:inline-block;background:#eef2f7;border-radius:99px;padding:5px 8px;font-size:11px;margin:2px 3px 2px 0} textarea{width:100%;min-height:130px;border:1px solid var(--line);border-radius:12px;padding:12px}
-.casepoint{display:block;padding:8px 0;border-bottom:1px dashed var(--line)} .casepoint input{margin-right:8px} hr{border:0;border-top:1px solid var(--line)}
-.notice{font-size:12px;color:#6b7280;line-height:1.55} .progress{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden} .progress>i{display:block;height:100%;background:#111827}
-@media (max-width:420px){.grid{grid-template-columns:1fr 1fr} .big{font-size:28px} .palette{grid-template-columns:repeat(8,1fr)}}
-</style>
-<link rel="manifest" href="manifest.webmanifest"></head>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css?v=4">
+</head>
 <body>
 <div class="app">
   <div class="header"><div class="title" id="headTitle">软考中项·共享题库</div><div class="sub">第3版18章｜班级共享｜好友挑战｜手机刷题</div></div>
-
   <section id="home" class="page active">
-    <div class="card hero">
-      <div class="muted">距离目标考试日</div><div class="big"><span id="daysLeft">--</span> 天</div>
-      <div class="progress"><i id="dayProgress" style="width:0%"></i></div>
-      <p class="muted" id="dateText"></p>
-      <button class="btn" onclick="startDaily()">开始今日必刷 20 题</button>
-    </div>
-    <div class="row">
-      <div class="metric">累计答题<b id="mDone">0</b></div>
-      <div class="metric">正确率<b id="mAcc">0%</b></div>
-      <div class="metric">错题<b id="mWrong">0</b></div>
-    </div>
-    
-    <div class="card">
-      <b>班级 / 学习小组</b>
-      <div class="row" style="margin-top:10px">
-        <div class="metric">昵称<b id="homeNick" style="font-size:16px">未设置</b></div>
-        <div class="metric">班级码<b id="homeClass" style="font-size:16px">SOFT2026</b></div>
-      </div>
-      <p class="muted">每个人可用自己的昵称学习。当��静态版的个人进度保存在各自手机；挑战成绩可一键导出/分享。</p>
-      <button class="btn secondary" onclick="go('community')">进入共享中心</button>
-    </div>
-
-    <div class="card">
-      <b>快速入口</b>
-      <div class="grid" style="margin-top:12px">
-        <button class="chapter" onclick="go('mock')">📝 全真模拟<small>75道综合知识 / 交卷后解析</small></button>
-        <button class="chapter" onclick="startCaseExam()">🧩 案例模拟<small>4道案例 / 完成后对照得分点</small></button>
-        <button class="chapter" onclick="go('practice')">📚 章节练习<small>18章按章刷题</small></button>
-        <button class="chapter" onclick="go('wrong')">🔥 错题回炉<small>只刷你的薄弱点</small></button>
-      </div>
-    </div>
-    <div class="card notice">
-      当前内置 <b>180</b> 道原创真题风格选择题 + <b>18</b> 道原创案例题。共享版增加昵称、班级码、挑战码、成绩卡和本机排行榜。题目按《系统集成项目管理工程师教程（第3版）》18章结构组织；可继续导入你自己拥有的历年真题/模拟题 JSON。
-    </div>
+    <div class="card hero"><div class="muted">距离目标考试日</div><div class="big"><span id="daysLeft">--</span> 天</div><div class="progress"><i id="dayProgress" style="width:0%"></i></div><p class="muted" id="dateText"></p><button class="btn" onclick="startDaily()">开始今日必刷 20 题</button></div>
+    <div class="row"><div class="metric">累计答题<b id="mDone">0</b></div><div class="metric">正确率<b id="mAcc">0%</b></div><div class="metric">错题<b id="mWrong">0</b></div></div>
+    <div class="card"><b>班级 / 学习小组</b><div class="row" style="margin-top:10px"><div class="metric">昵称<b id="homeNick" style="font-size:16px">未设置</b></div><div class="metric">班级码<b id="homeClass" style="font-size:16px">SOFT2026</b></div></div><p class="muted">每个人可用自己的昵称学习。个人进度保存在各自手机；挑战成绩可一键导出/分享。</p><button class="btn secondary" onclick="go('community')">进入共享中心</button></div>
+    <div class="card"><b>快速入口</b><div class="grid" style="margin-top:12px"><button class="chapter" onclick="go('mock')">📝 全真模拟<small>75道综合知识 / 交卷后解析</small></button><button class="chapter" onclick="startCaseExam()">🧩 案例模拟<small>4道案例 / 完成后对照得分点</small></button><button class="chapter" onclick="go('practice')">📚 章节练习<small>18章按章刷题</small></button><button class="chapter" onclick="go('wrong')">🔥 错题回炉<small>只刷你的薄弱点</small></button></div></div>
+    <div class="card notice">当前内置 <b>180</b> 道原创真题风格选择题 + <b>18</b> 道原创案例题。题目按《系统集成项目管理工程师教程（第3版）》18章结构组织。</div>
   </section>
-
-  <section id="practice" class="page">
-    <div class="card"><b>章节练习</b><p class="muted"><b>练习模式：</b>每题作答后立即显示答案与解析。<br><b>章节测试：</b>答题过程中不显示答案，交卷后统一评分并逐题解析。</p><div id="chapterGrid" class="grid"></div></div>
-  </section>
-
-  <section id="quiz" class="page">
-    <div class="toolbar"><span id="quizMeta"></span><span class="timer" id="quizTimer"></span></div>
-    <div class="card">
-      <div class="qtitle" id="qText"></div>
-      <div id="qOptions"></div>
-      <div id="qAnswer"></div>
-    </div>
-    <div class="toolbar">
-      <button class="btn secondary" onclick="prevQ()">上一题</button>
-      <button class="btn secondary" id="favBtn" onclick="toggleFav()">☆ 收藏</button>
-      <button class="btn danger" id="submitBtn" style="display:none" onclick="manualSubmit()">交卷</button>
-      <button class="btn" onclick="nextQ()">下一题</button>
-    </div>
-    <div class="card" id="paletteCard" style="display:none"><div id="palette" class="palette"></div></div>
-  </section>
-
-  <section id="mock" class="page">
-    <div class="card">
-      <b>综合知识��PЀL@
+  <section id="practice" class="page"><div class="card"><b>章节练习</b><p class="muted"><b>练习模式：</b>每题作答后立即显示答案与解析。<br><b>章节测试：</b>答题过程中不显示答案，交卷后统一评分并逐题解析。</p><div id="chapterGrid" class="grid"></div></div></section>
+  <section id="quiz" class="page"><div class="toolbar"><span id="quizMeta"></span><span class="timer" id="quizTimer"></span></div><div class="card"><div class="qtitle" id="qText"></div><div id="qOptions"></div><div id="qAnswer"></div></div><div class="toolbar"><button class="btn secondary" onclick="prevQ()">上一题</button><button class="btn secondary" id="favBtn" onclick="toggleFav()">☆ 收藏</button><button class="btn danger" id="submitBtn" style="display:none" onclick="manualSubmit()">交卷</button><button class="btn" onclick="nextQ()">下一题</button></div><div class="card" id="paletteCard" style="display:none"><div id="palette" class="palette"></div></div></section>
+  <section id="mock" class="page"><div class="card"><b>综合知识模拟考试</b><p>考试模式：答题过程中不显示正确答案和解析；完成后交卷，统一评分，再进入逐题解析。默认75道单选题。</p><label>题量：<select id="mockCount"><option>30</option><option>50</option><option selected>75</option></select></label><label style="margin-left:12px">时长：<select id="mockMinutes"><option>60</option><option>90</option><option selected>120</option></select> 分钟</label><p><button class="btn" onclick="startMock()">开始模拟考试</button></p></div><div class="card"><b>案例分析模拟</b><p class="muted">随机抽4道案例。先自己输入答案，再展开关键词自评。</p><button class="btn secondary" onclick="startCaseExam()">开始案例模拟</button></div></section>
+  <section id="wrong" class="page"><div class="card"><b>错题与收藏</b><p class="muted">错题会自动累计；答对后仍保留，方便重复复习。</p><div class="row"><button class="btn" onclick="startWrong()">刷错题</button><button class="btn secondary" onclick="startFav()">刷收藏</button><button class="btn danger" onclick="clearWrong()">清空错题</button></div></div><div class="card"><div id="wrongStats"></div></div></section>
+  <section id="caseExam" class="page"><div class="toolbar"><span id="caseMeta"></span><span class="timer" id="caseTimer"></span></div><div class="card"><div class="qtitle" id="caseTitle"></div><div id="caseScenario" style="line-height:1.7"></div><hr><b>你的答案</b><textarea id="caseInput" placeholder="先按考场方式写：问题点 + 原因 + 改进措施 / 计算过程……"></textarea><p><button class="btn" onclick="showCasePoints()">对照得分点</button></p><div id="casePoints"></div></div><div class="toolbar"><button class="btn secondary" onclick="prevCase()">上一题</button><button class="btn" onclick="nextCase()">下一题</button></div></section>
+  <section id="community" class="page"><div class="card"><b>共享中心</b><p class="muted">设置昵称和班级码。</p><p>昵称：<input id="nickInput" placeholder="例如：陆同学" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px"></p><p>班级码：<input id="classInput" placeholder="例如：SOFT2026" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px"></p><button class="btn" onclick="saveProfile()">保存资料</button></div><div class="card"><b>好友挑战</b><label>题量：<select id="challengeCount"><option>20</option><option selected>30</option><option>50</option></select></label><p><button class="btn" onclick="createChallenge()">生成挑战码</button></p><div id="challengeBox"></div><hr><p>输入挑战码：</p><input id="joinCode" placeholder="粘贴挑战码" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px"><p><button class="btn secondary" onclick="joinChallenge()">参加挑战</button></p></div><div class="card"><b>成绩卡</b><div id="scoreCardPreview" class="answer">完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。</div><p class="row"><button class="btn secondary" onclick="copyScoreCard()">复制成绩卡</button><button class="btn secondary" onclick="exportClassData()">导出成绩数据</button></p></div><div class="card"><b>本机同学成绩榜</b><div id="localBoard"></div></div></section>
+  <section id="settings" class="page"><div class="card"><b>设置与题库</b><p>目标考试日：<input type="date" id="examDate"></p><button class="btn" onclick="saveExamDate()">保存日期</button></div><div class="card"><b>导入自有题库 JSON</b><textarea id="importBox" placeholder='[{"chapter":11,"question":"...","options":["A","B","C","D"],"answer":0,"explain":"..."}]'></textarea><p><button class="btn" onclick="importQuestions()">导入</button> <button class="btn secondary" onclick="exportProgress()">导出学习数据</button></p></div></section>
+</div>
+<div class="bottom"><div class="nav"><button data-p="home" class="active" onclick="go('home')">🏠<br>首页</button><button data-p="practice" onclick="go('practice')">📚<br>章节</button><button data-p="mock" onclick="go('mock')">📝<br>模拟</button><button data-p="wrong" onclick="go('wrong')">🔥<br>错题</button><button data-p="community" onclick="go('community')">👥<br>共享</button><button data-p="settings" onclick="go('settings')">⚙️<br>设置</button></div></div>
+<script src="data-base.js?v=4"></script>
+<script src="q1-6.js?v=4"></script>
+<script src="q7-12.js?v=4"></script>
+<script src="q13-18.js?v=4"></script>
+<script src="app.js?v=4"></script>
+</body>
+</html>
