@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>软考中项·共享题库</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#047857;--bad:#b91c1c;--warn:#b45309}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit} .app{max-width:760px;margin:0 auto;padding-bottom:88px}
+.header{position:sticky;top:0;z-index:10;background:rgba(245,247,251,.94);backdrop-filter:blur(12px);padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.title{font-size:18px;font-weight:800} .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.page{display:none;padding:14px 14px 30px} .page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 18px rgba(0,0,0,.035)}
+.hero{padding:20px} .big{font-size:32px;font-weight:900;letter-spacing:-1px} .muted{color:var(--muted)} .row{display:flex;gap:10px;flex-wrap:wrap}
+.metric{flex:1;min-width:100px;background:#f9fafb;border-radius:12px;padding:12px} .metric b{display:block;font-size:20px;margin-top:3px}
+.btn{border:0;border-radius:12px;padding:12px 14px;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+.btn.secondary{background:#eef2f7;color:#111827} .btn.good{background:#065f46} .btn.danger{background:#991b1b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .chapter{text-align:left;background:#fff;border:1px solid var(--line);padding:13px;border-radius:12px}
+.chapter small{display:block;color:var(--muted);margin-top:5px}
+.qtitle{font-size:18px;line-height:1.55;font-weight:750;margin-bottom:14px} .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;margin:9px 0;line-height:1.45}
+.opt.selected{border:2px solid #111827} .opt.correct{border-color:#059669;background:#ecfdf5} .opt.wrong{border-color:#dc2626;background:#fef2f2}
+.answer{border-radius:12px;padding:12px;background:#f8fafc;margin-top:12px;line-height:1.6} .goodtxt{color:var(--good);font-weight:800} .badtxt{color:var(--bad);font-weight:800}
+.toolbar{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:10px 0} .timer{font-variant-numeric:tabular-nums;font-weight:900}
+.palette{display:grid;grid-template-columns:repeat(10,1fr);gap:5px} .palette button{aspect-ratio:1;border:1px solid var(--line);background:white;border-radius:7px;font-size:11px;padding:0}
+.palette button.done{background:#e5e7eb} .palette button.cur{outline:2px solid #111827}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center;z-index:20}
+.nav{width:min(760px,100%);display:grid;grid-template-columns:repeat(6,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.nav button{border:0;background:transparent;padding:8px 2px;font-size:11px;color:#4b5563} .nav button.active{font-weight:800;color:#111827}
+.tag{display:inline-block;background:#eef2f7;border-radius:99px;padding:5px 8px;font-size:11px;margin:2px 3px 2px 0} textarea{width:100%;min-height:130px;border:1px solid var(--line);border-radius:12px;padding:12px}
+.casepoint{display:block;padding:8px 0;border-bottom:1px dashed var(--line)} .casepoint input{margin-right:8px} hr{border:0;border-top:1px solid var(--line)}
+.notice{font-size:12px;color:#6b7280;line-height:1.55} .progress{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden} .progress>i{display:block;height:100%;background:#111827}
+@media (max-width:420px){.grid{grid-template-columns:1fr 1fr} .big{font-size:28px} .palette{grid-template-columns:repeat(8,1fr)}}
+</style>
+<link rel="manifest" href="manifest.webmanifest"></head>
+<body>
+<div class="app">
+  <div class="header"><div class="title" id="headTitle">软考中项·共享题库</div><div class="sub">第3版18章｜班级共享｜好友挑战｜手机刷题</div></div>
+
+  <section id="home" class="page active">
+    <div class="card hero">
+      <div class="muted">距离目标考试日</div><div class="big"><span id="daysLeft">--</span> 天</div>
+      <div class="progress"><i id="dayProgress" style="width:0%"></i></div>
+      <p class="muted" id="dateText"></p>
+      <button class="btn" onclick="startDaily()">开始今日必刷 20 题</button>
+    </div>
+    <div class="row">
+      <div class="metric">累计答题<b id="mDone">0</b></div>
+      <div class="metric">正确率<b id="mAcc">0%</b></div>
+      <div class="metric">错题<b id="mWrong">0</b></div>
+    </div>
+    
+    <div class="card">
+      <b>班级 / 学习小组</b>
+      <div class="row" style="margin-top:10px">
+        <div class="metric">昵称<b id="homeNick" style="font-size:16px">未设置</b></div>
+        <div class="metric">班级码<b id="homeClass" style="font-size:16px">SOFT2026</b></div>
+      </div>
+      <p class="muted">每个人可用自己的昵称学习。当��静态版的个人进度保存在各自手机；挑战成绩可一键导出/分享。</p>
+      <button class="btn secondary" onclick="go('community')">进入共享中心</button>
+    </div>
+
+    <div class="card">
+      <b>快速入口</b>
+      <div class="grid" style="margin-top:12px">
+        <button class="chapter" onclick="go('mock')">📝 全真模拟<small>75道综合知识 / 交卷后解析</small></button>
+        <button class="chapter" onclick="startCaseExam()">🧩 案例模拟<small>4道案例 / 完成后对照得分点</small></button>
+        <button class="chapter" onclick="go('practice')">📚 章节练习<small>18章按章刷题</small></button>
+        <button class="chapter" onclick="go('wrong')">🔥 错题回炉<small>只刷你的薄弱点</small></button>
+      </div>
+    </div>
+    <div class="card notice">
+      当前内置 <b>180</b> 道原创真题风格选择题 + <b>18</b> 道原创案例题。共享版增加昵称、班级码、挑战码、成绩卡和本机排行榜。题目按《系统集成项目管理工程师教程（第3版）》18章结构组织；可继续导入你自己拥有的历年真题/模拟题 JSON。
+    </div>
+  </section>
+
+  <section id="practice" class="page">
+    <div class="card"><b>章节练习</b><p class="muted"><b>练习模式：</b>每题作答后立即显示答案与解析。<br><b>章节测试：</b>答题过程中不显示答案，交卷后统一评分并逐题解析。</p><div id="chapterGrid" class="grid"></div></div>
+  </section>
+
+  <section id="quiz" class="page">
+    <div class="toolbar"><span id="quizMeta"></span><span class="timer" id="quizTimer"></span></div>
+    <div class="card">
+      <div class="qtitle" id="qText"></div>
+      <div id="qOptions"></div>
+      <div id="qAnswer"></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn secondary" onclick="prevQ()">上一题</button>
+      <button class="btn secondary" id="favBtn" onclick="toggleFav()">☆ 收藏</button>
+      <button class="btn danger" id="submitBtn" style="display:none" onclick="manualSubmit()">交卷</button>
+      <button class="btn" onclick="nextQ()">下一题</button>
+    </div>
+    <div class="card" id="paletteCard" style="display:none"><div id="palette" class="palette"></div></div>
+  </section>
+
+  <section id="mock" class="page">
+    <div class="card">
+      <b>综合知识��PЀL@
