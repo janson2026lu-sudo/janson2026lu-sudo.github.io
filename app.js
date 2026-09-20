@@ -59,12 +59,12 @@ function renderPastBatches(){
   pastBatchGrid.innerHTML=batches.map(b=>`<div class="chapter"><b>${b.label}</b><small>${b.note} · ${b.count}题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startPastBatch('${b.id}',false)">练习</button><button class="btn" style="padding:8px 10px" onclick="startPastBatch('${b.id}',true)">测试</button></div></div>`).join('');
 }
 function startPastBatch(batch,isExam){
-  const a=(SEED.pastQuestions||[]).filter(q=>q.batch===batch);
+  const a=pastQ().filter(q=>q.batch===batch);
   if(!a.length)return alert('该批次题目还在整理中');
   startQuiz(shuffle(a),batch+(isExam?' · 测试':' · 练习'),isExam,isExam?Math.max(25,Math.round(a.length*1.6)):0);
 }
 function startPastMix(isExam){
-  const a=shuffle(SEED.pastQuestions||[]);
+  const a=shuffle(pastQ());
   if(!a.length)return alert('近期真题题库还在整理中');
   const count=Math.min(isExam?45:30,a.length);
   startQuiz(a.slice(0,count),isExam?'近三期真题考点模拟':'近三期真题考点练习',isExam,isExam?70:0);
