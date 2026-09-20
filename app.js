@@ -2,11 +2,20 @@ const SEED = window.SEED;
 const LS='rkzx_v1';
 let state=JSON.parse(localStorage.getItem(LS)||'null')||{answers:{},wrong:[],fav:[],done:0,correct:0,examDate:'2026-10-24',extra:[],profile:{nick:'',classCode:'SOFT2026'},records:[],lastScoreCard:''};
 let pool=[], idx=0, mode='practice', locked=false, timer=null, deadline=null, casePool=[], caseIdx=0;
+function makeAnswerTargetMap(){
+  const items=[...(SEED.questions||[]),...(SEED.pastQuestions||[])].slice().sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
+  const targets=items.map((_,i)=>i%4);
+  let seed=0x5EED2026;
+  function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
+  for(let i=targets.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[targets[i],targets[j]]=[targets[j],targets[i]]}
+  const map={}; items.forEach((q,i)=>map[String(q.id)]=targets[i]); return map;
+}
+const ANSWER_TARGETS=makeAnswerTargetMap();
 function balanceBuiltIn(q){
   if(!q || !Array.isArray(q.options) || q.options.length!==4) return q;
-  const target=((Number(q.id)||0)%4+4)%4;
+  const target=ANSWER_TARGETS[String(q.id)];
   const old=Number(q.answer);
-  if(old<0 || old>3 || old===target) return q;
+  if(target===undefined || old<0 || old>3 || old===target) return q;
   const shift=(target-old+4)%4;
   const opts=new Array(4);
   for(let i=0;i<4;i++) opts[(i+shift)%4]=q.options[i];
