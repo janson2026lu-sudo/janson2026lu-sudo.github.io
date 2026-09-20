@@ -44,7 +44,8 @@ function clearWrong(){if(confirm('确认清空错题本？')){state.wrong=[];sav
 
 function renderPastBatches(){
   if(!window.pastBatchGrid)return;
-  const batches=SEED.pastBatches||[];
+  const base=SEED.pastBatches||[];
+  const batches=base.map(b=>({...b,count:pastQ().filter(q=>q.batch===b.id).length}));
   pastBatchGrid.innerHTML=batches.map(b=>`<div class="chapter"><b>${b.label}</b><small>${b.note} · ${b.count}题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startPastBatch('${b.id}',false)">练习</button><button class="btn" style="padding:8px 10px" onclick="startPastBatch('${b.id}',true)">测试</button></div></div>`).join('');
 }
 function startPastBatch(batch,isExam){
