@@ -38,7 +38,7 @@ const allWithPast=()=>allQ().concat(pastQ());
 function save(){localStorage.setItem(LS,JSON.stringify(state)); updateStats();}
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.p===p));window.scrollTo(0,0);if(p==='wrong')renderWrongStats();}
 function updateStats(){mDone.textContent=state.done||0;mAcc.textContent=(state.done?Math.round(100*state.correct/state.done):0)+'%';mWrong.textContent=(state.wrong||[]).length;}
-function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();renderPastStats();updateStats();renderWrongStats();}
+function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.caseAnswers=state.caseAnswers||{};state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();renderPastStats();updateStats();renderWrongStats();}
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
 function startDaily(){const src=allWithPast();startQuiz(shuffle(src).slice(0,Math.min(20,src.length)),'今日必刷',false)}
 function startChapterPractice(ch){startQuiz(allQ().filter(q=>q.chapter===ch),`第${ch}章 ${SEED.chapters[ch-1]} · 练习`,false)}
@@ -85,10 +85,47 @@ function startPastCases(){
 }
 
 function startCaseExam(){casePool=shuffle(SEED.cases).slice(0,4);caseIdx=0;go('caseExam');startTimer(120*60,'caseTimer',()=>alert('案例训练时间到'));renderCase()}
-function renderCase(){const c=casePool[caseIdx];caseMeta.textContent=`案例模拟 · ${caseIdx+1}/${casePool.length}`;caseTitle.textContent=c.title;caseScenario.textContent=c.scenario;caseInput.value='';casePoints.innerHTML=''}
-function showCasePoints(){const c=casePool[caseIdx];casePoints.innerHTML=`<div class="answer"><b>建议得分点（自评）</b>${c.points.map(p=>`<label class="casepoint"><input type="checkbox">${p}</label>`).join('')}<p><b>解析：</b>${c.analysis}</p></div>`}
-function nextCase(){if(caseIdx<casePool.length-1){caseIdx++;renderCase();window.scrollTo(0,0)}else alert('4道案例已完成，请回看得分点进行复盘。')}
-function prevCase(){if(caseIdx>0){caseIdx--;renderCase();window.scrollTo(0,0)}}
+function saveCaseDraft(){
+  const c=casePool[caseIdx]; if(!c||!window.caseInput)return;
+  state.caseAnswers=state.caseAnswers||{};
+  state.caseAnswers[c.title]=caseInput.value||'';
+  localStorage.setItem(LS,JSON.stringify(state));
+}
+function renderCase(){
+  const c=casePool[caseIdx]; if(!c)return;
+  const g=window.getCaseGuide?window.getCaseGuide(c):{category:'案例分析',template:[]};
+  caseMeta.textContent=`案例模拟 · ${caseIdx+1}/${casePool.length}`;
+  caseTitle.textContent=c.title;
+  if(window.caseCategory)caseCategory.textContent=g.category||'案例分析';
+  caseScenario.textContent=c.scenario;
+  state.caseAnswers=state.caseAnswers||{};
+  caseInput.value=state.caseAnswers[c.title]||'';
+  casePoints.innerHTML='';caseScore.innerHTML='';caseReference.innerHTML='';caseTemplate.innerHTML='';
+}
+function updateCaseSelfScore(){
+  const c=casePool[caseIdx]; if(!c)return;
+  const checks=[...casePoints.querySelectorAll('input[type=checkbox]')];
+  const hit=checks.filter(x=>x.checked).length,total=checks.length;
+  caseScore.innerHTML=`<div class="answer"><b>踩点自评：${hit}/${total}</b>（约 ${total?Math.round(hit/total*100):0}%）<br><span class="notice">这是按得分点数量做的练习自评，不等同于官方阅卷分数。建议先独立作答，再勾选真正写到的点。</span></div>`;
+}
+function showCasePoints(){
+  saveCaseDraft();
+  const c=casePool[caseIdx];
+  casePoints.innerHTML=`<div class="answer"><b>建议得分点</b>${c.points.map((p,i)=>`<label class="casepoint"><input type="checkbox" onchange="updateCaseSelfScore()">${i+1}. ${p}</label>`).join('')}<p><b>命题解析：</b>${c.analysis}</p></div>`;
+  updateCaseSelfScore();
+}
+function showCaseReference(){
+  saveCaseDraft();
+  const c=casePool[caseIdx]; const g=window.getCaseGuide?window.getCaseGuide(c):{};
+  const refs=(g.reference&&g.reference.length)?g.reference:c.points.map(p=>p.replace(/^[①②③④⑤⑥⑦⑧⑨⑩]\s*/,'')); 
+  caseReference.innerHTML=`<div class="answer"><b>参考作答</b><ol style="padding-left:22px;line-height:1.75">${refs.map(x=>`<li>${x}</li>`).join('')}</ol><div class="notice">参考答案按教材知识点与案例得分逻辑整理。考场不要求逐字一致，关键是覆盖要点、表达具体、避免只写“加强管理/加强沟通”等空泛语句。</div></div>`;
+}
+function showCaseTemplate(){
+  const c=casePool[caseIdx]; const g=window.getCaseGuide?window.getCaseGuide(c):{category:'案例分析',template:[]};
+  caseTemplate.innerHTML=`<div class="answer"><b>${g.category||'案例分析'}通用答题模板</b><ol style="padding-left:22px;line-height:1.75">${(g.template||[]).map(x=>`<li>${x}</li>`).join('')}</ol><div class="notice">模板用于帮助组织答案，实际作答必须结合题干事实，不要机械照抄。</div></div>`;
+}
+function nextCase(){saveCaseDraft();if(caseIdx<casePool.length-1){caseIdx++;renderCase();window.scrollTo(0,0)}else alert(`${casePool.length}道案例已完成。建议逐题使用“踩点自评”和“参考答案”复盘遗漏点。`)}
+function prevCase(){saveCaseDraft();if(caseIdx>0){caseIdx--;renderCase();window.scrollTo(0,0)}}
 function saveExamDate(){state.examDate=examDate.value||state.examDate;save();init();alert('已保存')}
 function importQuestions(){try{const arr=JSON.parse(importBox.value);if(!Array.isArray(arr))throw Error();const base=10000+(state.extra?.length||0);const clean=arr.map((x,i)=>({id:base+i,chapter:+x.chapter||1,question:String(x.question),options:x.options,answer:+x.answer,explain:String(x.explain||''),key:String(x.key||'自定义题'),difficulty:x.difficulty||'中',source:x.source||'自有导入'})).filter(x=>Array.isArray(x.options)&&x.options.length===4&&x.answer>=0&&x.answer<4);state.extra=(state.extra||[]).concat(clean);save();init();alert(`成功导入 ${clean.length} 道题`)}catch(e){alert('JSON格式不正确，请按示例检查。')}}
 function exportProgress(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='软考中项学习数据.json';a.click();URL.revokeObjectURL(a.href)}
