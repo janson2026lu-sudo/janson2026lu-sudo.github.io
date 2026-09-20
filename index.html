@@ -42,6 +42,10 @@
       <p><span class="tag">进度/PERT/关键路径</span><span class="tag">风险分析与应对</span><span class="tag">配置与变更</span><span class="tag">挣值/CPI/SPI</span><span class="tag">数据工程</span><span class="tag">沟通/干系人</span><span class="tag">采购/合同</span><span class="tag">信息安全/标准</span></p>
       <p class="notice">这张热点图用于指导复习，不表示官方出题比例。</p>
     </div>
+    <div class="card">
+      <b>近三期高频统计</b>
+      <div id="pastStatsBox" class="muted">正在统计近期题库……</div>
+    </div>
   </section>
   <section id="quiz" class="page"><div class="toolbar"><span id="quizMeta"></span><span class="timer" id="quizTimer"></span></div><div class="card"><div class="qtitle" id="qText"></div><div id="qOptions"></div><div id="qAnswer"></div></div><div class="toolbar"><button class="btn secondary" onclick="prevQ()">上一题</button><button class="btn secondary" id="favBtn" onclick="toggleFav()">☆ 收藏</button><button class="btn danger" id="submitBtn" style="display:none" onclick="manualSubmit()">交卷</button><button class="btn" onclick="nextQ()">下一题</button></div><div class="card" id="paletteCard" style="display:none"><div id="palette" class="palette"></div></div></section>
   <section id="mock" class="page"><div class="card"><b>综合知识模拟考试</b><p>考试模式：答题过程中不显示正确答案和解析；完成后交卷，统一评分，再进入逐题解析。默认75道单选题。</p><label>题量：<select id="mockCount"><option>30</option><option>50</option><option selected>75</option></select></label><label style="margin-left:12px">时长：<select id="mockMinutes"><option>60</option><option>90</option><option selected>120</option></select> 分钟</label><p><button class="btn" onclick="startMock()">开始模拟考试</button></p></div><div class="card"><b>案例分析模拟</b><p class="muted">随机抽4道案例。先自己输入答案，再展开关键词自评。</p><button class="btn secondary" onclick="startCaseExam()">开始案例模拟</button></div></section>
