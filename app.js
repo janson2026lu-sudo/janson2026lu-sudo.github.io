@@ -3,17 +3,19 @@ const LS='rkzx_v1';
 let state=JSON.parse(localStorage.getItem(LS)||'null')||{answers:{},wrong:[],fav:[],done:0,correct:0,examDate:'2026-10-24',extra:[],profile:{nick:'',classCode:'SOFT2026'},records:[],lastScoreCard:''};
 let pool=[], idx=0, mode='practice', locked=false, timer=null, deadline=null, casePool=[], caseIdx=0;
 const allQ=()=>SEED.questions.concat(state.extra||[]);
+const pastQ=()=>SEED.pastQuestions||[];
+const allWithPast=()=>allQ().concat(pastQ());
 function save(){localStorage.setItem(LS,JSON.stringify(state)); updateStats();}
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.p===p));window.scrollTo(0,0);if(p==='wrong')renderWrongStats();}
 function updateStats(){mDone.textContent=state.done||0;mAcc.textContent=(state.done?Math.round(100*state.correct/state.done):0)+'%';mWrong.textContent=(state.wrong||[]).length;}
-function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();updateStats();renderWrongStats();}
+function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();updateStats();renderWrongStats();}
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
-function startDaily(){startQuiz(shuffle(allQ()).slice(0,Math.min(20,allQ().length)),'今日必刷',false)}
+function startDaily(){const src=allWithPast();startQuiz(shuffle(src).slice(0,Math.min(20,src.length)),'今日必刷',false)}
 function startChapterPractice(ch){startQuiz(allQ().filter(q=>q.chapter===ch),`第${ch}章 ${SEED.chapters[ch-1]} · 练习`,false)}
 function startChapterExam(ch){const a=shuffle(allQ().filter(q=>q.chapter===ch));startQuiz(a,`第${ch}章 ${SEED.chapters[ch-1]} · 测试`,true,Math.max(20,Math.round(a.length*1.6)))}
 function startWrong(){let a=allQ().filter(q=>state.wrong.includes(q.id));if(!a.length)return alert('当前还没有错题。');startQuiz(a,'错题回炉',false)}
 function startFav(){let a=allQ().filter(q=>state.fav.includes(q.id));if(!a.length)return alert('当前还没有收藏题。');startQuiz(a,'收藏题',false)}
-function startMock(){let n=+mockCount.value;let mins=+mockMinutes.value;let a=shuffle(allQ()).slice(0,Math.min(n,allQ().length));startQuiz(a,'综合知识模拟',true,mins)}
+function startMock(){let n=+mockCount.value;let mins=+mockMinutes.value;let a=shuffle(allWithPast()).slice(0,Math.min(n,allWithPast().length));startQuiz(a,'综合知识模拟',true,mins)}
 function startQuiz(a,title,isMock=false,mins=0){if(!a.length)return alert('没有可用题目');pool=a;idx=0;mode=isMock?'mock':'practice';locked=false;state.session={};save();go('quiz');quizMeta.textContent=title;quizMeta.dataset.title=title;paletteCard.style.display=isMock?'block':'none';if(isMock){submitBtn.style.display='inline-block';startTimer(mins*60,'quizTimer',()=>submitMock())}else{submitBtn.style.display='none';clearInterval(timer);quizTimer.textContent=''}renderQ()}
 function renderQ(){const q=pool[idx];if(!q)return;qText.textContent=`${idx+1}. ${q.question}`;const given=state.session?.[q.id];locked=(mode==='practice'&&given!==undefined);qOptions.innerHTML=q.options.map((o,i)=>`<button class="opt ${given===i?'selected':''}" onclick="choose(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');qAnswer.innerHTML='';if(locked)showExplain(given);quizMeta.textContent=(quizMeta.dataset.title||'练习')+` · ${idx+1}/${pool.length}`;favBtn.textContent=state.fav.includes(q.id)?'★ 已收藏':'☆ 收藏';if(mode==='mock')renderPalette()}
 function choose(i){const q=pool[idx];if(mode==='practice'&&state.session[q.id]!==undefined)return;if(mode==='practice'&&state.session[q.id]===undefined){state.done++;if(i===q.answer)state.correct++;else if(!state.wrong.includes(q.id))state.wrong.push(q.id)}state.session[q.id]=i;save();if(mode==='practice'){locked=true;showExplain(i)}else renderQ()}
@@ -28,6 +30,29 @@ function renderReview(){mode='review';const q=pool[idx];qText.textContent=`${idx
 function startTimer(sec,el,done){clearInterval(timer);deadline=Date.now()+sec*1000;const e=document.getElementById(el);function tick(){let s=Math.max(0,Math.ceil((deadline-Date.now())/1000));let h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;e.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;if(s<=0){clearInterval(timer);done()}}tick();timer=setInterval(tick,1000)}
 function renderWrongStats(){const arr=allQ().filter(q=>state.wrong.includes(q.id));const by={};arr.forEach(q=>by[q.chapter]=(by[q.chapter]||0)+1);wrongStats.innerHTML=arr.length?`<b>共 ${arr.length} 道错题</b><p>${Object.entries(by).map(([c,n])=>`<span class="tag">第${c}章 ${n}题</span>`).join('')}</p>`:'目前没有错题。'}
 function clearWrong(){if(confirm('确认清空错题本？')){state.wrong=[];save();renderWrongStats()}}
+
+function renderPastBatches(){
+  if(!window.pastBatchGrid)return;
+  const batches=SEED.pastBatches||[];
+  pastBatchGrid.innerHTML=batches.map(b=>`<div class="chapter"><b>${b.label}</b><small>${b.note} · ${b.count}题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startPastBatch('${b.id}',false)">练习</button><button class="btn" style="padding:8px 10px" onclick="startPastBatch('${b.id}',true)">测试</button></div></div>`).join('');
+}
+function startPastBatch(batch,isExam){
+  const a=(SEED.pastQuestions||[]).filter(q=>q.batch===batch);
+  if(!a.length)return alert('该批次题目还在整理中');
+  startQuiz(shuffle(a),batch+(isExam?' · 测试':' · 练习'),isExam,isExam?Math.max(25,Math.round(a.length*1.6)):0);
+}
+function startPastMix(isExam){
+  const a=shuffle(SEED.pastQuestions||[]);
+  if(!a.length)return alert('近期真题题库还在整理中');
+  const count=Math.min(isExam?45:30,a.length);
+  startQuiz(a.slice(0,count),isExam?'近三期真题考点模拟':'近三期真题考点练习',isExam,isExam?70:0);
+}
+function startPastCases(){
+  casePool=shuffle(SEED.pastCases||[]);
+  if(!casePool.length)return alert('近期案例专项还在整理中');
+  caseIdx=0;go('caseExam');startTimer(100*60,'caseTimer',()=>alert('案例训练时间到'));renderCase();
+}
+
 function startCaseExam(){casePool=shuffle(SEED.cases).slice(0,4);caseIdx=0;go('caseExam');startTimer(120*60,'caseTimer',()=>alert('案例训练时间到'));renderCase()}
 function renderCase(){const c=casePool[caseIdx];caseMeta.textContent=`案例模拟 · ${caseIdx+1}/${casePool.length}`;caseTitle.textContent=c.title;caseScenario.textContent=c.scenario;caseInput.value='';casePoints.innerHTML=''}
 function showCasePoints(){const c=casePool[caseIdx];casePoints.innerHTML=`<div class="answer"><b>建议得分点（自评）</b>${c.points.map(p=>`<label class="casepoint"><input type="checkbox">${p}</label>`).join('')}<p><b>解析：</b>${c.analysis}</p></div>`}
