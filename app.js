@@ -2,8 +2,18 @@ const SEED = window.SEED;
 const LS='rkzx_v1';
 let state=JSON.parse(localStorage.getItem(LS)||'null')||{answers:{},wrong:[],fav:[],done:0,correct:0,examDate:'2026-10-24',extra:[],profile:{nick:'',classCode:'SOFT2026'},records:[],lastScoreCard:''};
 let pool=[], idx=0, mode='practice', locked=false, timer=null, deadline=null, casePool=[], caseIdx=0;
-const allQ=()=>SEED.questions.concat(state.extra||[]);
-const pastQ=()=>SEED.pastQuestions||[];
+function balanceBuiltIn(q){
+  if(!q || !Array.isArray(q.options) || q.options.length!==4) return q;
+  const target=((Number(q.id)||0)%4+4)%4;
+  const old=Number(q.answer);
+  if(old<0 || old>3 || old===target) return q;
+  const shift=(target-old+4)%4;
+  const opts=new Array(4);
+  for(let i=0;i<4;i++) opts[(i+shift)%4]=q.options[i];
+  return {...q,options:opts,answer:target};
+}
+const allQ=()=>SEED.questions.map(balanceBuiltIn).concat(state.extra||[]);
+const pastQ=()=>(SEED.pastQuestions||[]).map(balanceBuiltIn);
 function calcPastStats(){
   const list=pastQ(); const byKey={}, byChapter={}, byBatch={};
   list.forEach(x=>{byKey[x.key]=(byKey[x.key]||0)+1;byChapter[x.chapter]=(byChapter[x.chapter]||0)+1;byBatch[x.batch]=(byBatch[x.batch]||0)+1});
