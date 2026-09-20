@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#111827">
 <title>软考中项·共享题库</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 <div class="app">
@@ -15,8 +15,8 @@
     <div class="card hero"><div class="muted">距离目标考试日</div><div class="big"><span id="daysLeft">--</span> 天</div><div class="progress"><i id="dayProgress" style="width:0%"></i></div><p class="muted" id="dateText"></p><button class="btn" onclick="startDaily()">开始今日必刷 20 题</button></div>
     <div class="row"><div class="metric">累计答题<b id="mDone">0</b></div><div class="metric">正确率<b id="mAcc">0%</b></div><div class="metric">错题<b id="mWrong">0</b></div></div>
     <div class="card"><b>班级 / 学习小组</b><div class="row" style="margin-top:10px"><div class="metric">昵称<b id="homeNick" style="font-size:16px">未设置</b></div><div class="metric">班级码<b id="homeClass" style="font-size:16px">SOFT2026</b></div></div><p class="muted">每个人可用自己的昵称学习。个人进度保存在各自手机；挑战成绩可一键导出/分享。</p><button class="btn secondary" onclick="go('community')">进入共享中心</button></div>
-    <div class="card"><b>快速入口</b><div class="grid" style="margin-top:12px"><button class="chapter" onclick="go('mock')">📝 全真模拟<small>75道综合知识 / 交卷后解析</small></button><button class="chapter" onclick="startCaseExam()">🧩 案例模拟<small>4道案例 / 完成后对照得分点</small></button><button class="chapter" onclick="go('practice')">📚 章节练习<small>18章按章刷题</small></button><button class="chapter" onclick="go('past')">🧭 近期真题<small>2024下—2026上考点改编</small></button><button class="chapter" onclick="go('wrong')">🔥 错题回炉<small>只刷你的薄弱点</small></button></div></div>
-    <div class="card notice">当前内置 <b>180</b> 道原创真题风格选择题 + <b>45</b> 道近期公开回忆版考点改编题 + <b>24</b> 道案例训练。近期真题模块明确标注“考点改编”，不是逐字复制真题。</div>
+    <div class="card"><b>快速入口</b><div class="grid" style="margin-top:12px"><button class="chapter" onclick="go('mock')">📝 全真模拟<small>75道综合知识 / 交卷后解析</small></button><button class="chapter" onclick="startCaseExam()">🧩 案例模拟<small>4道案例 / 完成后对照得分点</small></button><button class="chapter" onclick="go('practice')">📚 章节练习<small>18章按章刷题</small></button><button class="chapter" onclick="go('past')">🧭 近期真题<small>2024下—2026上 · 120题</small></button><button class="chapter" onclick="go('wrong')">🔥 错题回炉<small>只刷你的薄弱点</small></button></div></div>
+    <div class="card notice">当前内置 <b>180</b> 道原创真题风格选择题 + <b>120</b> 道近期公开回忆版考点改编题 + <b>24</b> 道案例训练。近期真题模块明确标注“考点改编”，不是逐字复制真题。</div>
   </section>
   <section id="practice" class="page"><div class="card"><b>章节练习</b><p class="muted"><b>练习模式：</b>每题作答后立即显示答案与解析。<br><b>章节测试：</b>答题过程中不显示答案，交卷后统一评分并逐题解析。</p><div id="chapterGrid" class="grid"></div></div></section>
   <section id="past" class="page">
@@ -51,11 +51,12 @@
   <section id="settings" class="page"><div class="card"><b>设置与题库</b><p>目标考试日：<input type="date" id="examDate"></p><button class="btn" onclick="saveExamDate()">保存日期</button></div><div class="card"><b>导入自有题库 JSON</b><textarea id="importBox" placeholder='[{"chapter":11,"question":"...","options":["A","B","C","D"],"answer":0,"explain":"..."}]'></textarea><p><button class="btn" onclick="importQuestions()">导入</button> <button class="btn secondary" onclick="exportProgress()">导出学习数据</button></p></div></section>
 </div>
 <div class="bottom"><div class="nav"><button data-p="home" class="active" onclick="go('home')">🏠<br>首页</button><button data-p="practice" onclick="go('practice')">📚<br>章节</button><button data-p="mock" onclick="go('mock')">📝<br>模拟</button><button data-p="wrong" onclick="go('wrong')">🔥<br>错题</button><button data-p="community" onclick="go('community')">👥<br>共享</button><button data-p="settings" onclick="go('settings')">⚙️<br>设置</button></div></div>
-<script src="data-base.js?v=5"></script>
-<script src="q1-6.js?v=5"></script>
-<script src="q7-12.js?v=5"></script>
-<script src="q13-18.js?v=5"></script>
-<script src="past-exams.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data-base.js?v=6"></script>
+<script src="q1-6.js?v=6"></script>
+<script src="q7-12.js?v=6"></script>
+<script src="q13-18.js?v=6"></script>
+<script src="past-exams.js?v=6"></script>
+<script src="past-exams-extra.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
