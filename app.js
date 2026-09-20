@@ -4,11 +4,22 @@ let state=JSON.parse(localStorage.getItem(LS)||'null')||{answers:{},wrong:[],fav
 let pool=[], idx=0, mode='practice', locked=false, timer=null, deadline=null, casePool=[], caseIdx=0;
 const allQ=()=>SEED.questions.concat(state.extra||[]);
 const pastQ=()=>SEED.pastQuestions||[];
+function calcPastStats(){
+  const list=pastQ(); const byKey={}, byChapter={}, byBatch={};
+  list.forEach(x=>{byKey[x.key]=(byKey[x.key]||0)+1;byChapter[x.chapter]=(byChapter[x.chapter]||0)+1;byBatch[x.batch]=(byBatch[x.batch]||0)+1});
+  const topKeys=Object.entries(byKey).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const topCh=Object.entries(byChapter).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  return {topKeys,topCh,byBatch,total:list.length};
+}
+function renderPastStats(){
+ if(!window.pastStatsBox)return; const st=calcPastStats();
+ pastStatsBox.innerHTML=`<div class="row"><div class="metric">近期题数<b>${st.total}</b></div><div class="metric">覆盖批次<b>${Object.keys(st.byBatch).length}</b></div><div class="metric">高频考点<b>${st.topKeys.length}</b></div></div><p><b>高频考点：</b><br>${st.topKeys.map(([k,n])=>`<span class="tag">${k} × ${n}</span>`).join('')}</p><p><b>章节集中度：</b><br>${st.topCh.map(([c,n])=>`<span class="tag">第${c}章 × ${n}</span>`).join('')}</p>`;}
+
 const allWithPast=()=>allQ().concat(pastQ());
 function save(){localStorage.setItem(LS,JSON.stringify(state)); updateStats();}
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.p===p));window.scrollTo(0,0);if(p==='wrong')renderWrongStats();}
 function updateStats(){mDone.textContent=state.done||0;mAcc.textContent=(state.done?Math.round(100*state.correct/state.done):0)+'%';mWrong.textContent=(state.wrong||[]).length;}
-function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();updateStats();renderWrongStats();}
+function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();renderPastStats();updateStats();renderWrongStats();}
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
 function startDaily(){const src=allWithPast();startQuiz(shuffle(src).slice(0,Math.min(20,src.length)),'今日必刷',false)}
 function startChapterPractice(ch){startQuiz(allQ().filter(q=>q.chapter===ch),`第${ch}章 ${SEED.chapters[ch-1]} · 练习`,false)}
