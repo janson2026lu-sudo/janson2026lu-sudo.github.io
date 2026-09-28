@@ -3,7 +3,7 @@ const LS='rkzx_v1';
 let state=JSON.parse(localStorage.getItem(LS)||'null')||{answers:{},wrong:[],fav:[],done:0,correct:0,examDate:'2026-10-24',extra:[],profile:{nick:'',classCode:'SOFT2026'},records:[],lastScoreCard:''};
 let pool=[], idx=0, mode='practice', locked=false, timer=null, deadline=null, casePool=[], caseIdx=0;
 function makeAnswerTargetMap(){
-  const items=[...(SEED.questions||[]),...(SEED.pastQuestions||[])].slice().sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
+  const items=[...(SEED.questions||[]),...(SEED.pastQuestions||[]),...(SEED.hardQuestions||[])].slice().sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
   const targets=items.map((_,i)=>i%4);
   let seed=0x5EED2026;
   function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
@@ -21,7 +21,8 @@ function balanceBuiltIn(q){
   for(let i=0;i<4;i++) opts[(i+shift)%4]=q.options[i];
   return {...q,options:opts,answer:target};
 }
-const allQ=()=>SEED.questions.map(balanceBuiltIn).concat(state.extra||[]);
+const hardQ=()=>(SEED.hardQuestions||[]).map(balanceBuiltIn);
+const allQ=()=>SEED.questions.map(balanceBuiltIn).concat(hardQ()).concat(state.extra||[]);
 const pastQ=()=>(SEED.pastQuestions||[]).map(balanceBuiltIn);
 function calcPastStats(){
   const list=pastQ(); const byKey={}, byChapter={}, byBatch={};
@@ -35,17 +36,44 @@ function renderPastStats(){
  pastStatsBox.innerHTML=`<div class="row"><div class="metric">近期题数<b>${st.total}</b></div><div class="metric">覆盖批次<b>${Object.keys(st.byBatch).length}</b></div><div class="metric">高频考点<b>${st.topKeys.length}</b></div></div><p><b>高频考点：</b><br>${st.topKeys.map(([k,n])=>`<span class="tag">${k} × ${n}</span>`).join('')}</p><p><b>章节集中度：</b><br>${st.topCh.map(([c,n])=>`<span class="tag">第${c}章 × ${n}</span>`).join('')}</p>`;}
 
 const allWithPast=()=>allQ().concat(pastQ());
+const HF_WORDS=['关键路径','PERT','挣值','CPI','SPI','EAC','ETC','风险','变更','配置','WBS','范围','沟通','干系人','成本','采购','合同','质量','数据','安全','储备','控制临界值'];
+function qWeight(q,level='标准'){
+  let w=Number(q.weight||1);
+  const txt=((q.key||'')+' '+(q.question||''));
+  if(HF_WORDS.some(k=>txt.includes(k))) w+=2;
+  if([11,12,13,15].includes(Number(q.chapter))) w+=1.5;
+  if(q.kind==='高频强化') w+=level==='冲刺'?4:(level==='强化'?2:1);
+  if(q.difficulty==='难') w+=level==='冲刺'?2:1;
+  if(level==='标准') w=Math.min(w,5);
+  if(level==='强化') w=Math.min(w*1.15,8);
+  if(level==='冲刺') w=Math.min(w*1.35,10);
+  return Math.max(0.2,w);
+}
+function weightedSample(src,n,level='标准'){
+  const arr=[...src],out=[];
+  n=Math.min(n,arr.length);
+  while(out.length<n&&arr.length){
+    const weights=arr.map(x=>qWeight(x,level));
+    const total=weights.reduce((a,b)=>a+b,0);
+    let r=Math.random()*total,idx=0;
+    for(;idx<weights.length-1;idx++){r-=weights[idx];if(r<=0)break}
+    out.push(arr[idx]);arr.splice(idx,1);
+  }
+  return out;
+}
 function save(){localStorage.setItem(LS,JSON.stringify(state)); updateStats();}
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.p===p));window.scrollTo(0,0);if(p==='wrong')renderWrongStats();}
 function updateStats(){mDone.textContent=state.done||0;mAcc.textContent=(state.done?Math.round(100*state.correct/state.done):0)+'%';mWrong.textContent=(state.wrong||[]).length;}
-function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.caseAnswers=state.caseAnswers||{};state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();renderPastStats();updateStats();renderWrongStats();}
+function init(){state.profile=state.profile||{nick:'',classCode:'SOFT2026'};state.records=state.records||[];state.caseAnswers=state.caseAnswers||{};state.lastScoreCard=state.lastScoreCard||'';examDate.value=state.examDate;const d=new Date(state.examDate+'T00:00:00');const now=new Date();const days=Math.max(0,Math.ceil((d-now)/86400000));daysLeft.textContent=days;dateText.textContent='目标考试日：'+state.examDate+'（可在设置修改）';dayProgress.style.width=Math.min(100,Math.max(0,(45-days)/45*100))+'%';chapterGrid.innerHTML=SEED.chapters.map((c,i)=>`<div class="chapter" style="padding:12px"><b>第${i+1}章 ${c}</b><small>${allQ().filter(q=>q.chapter===i+1).length} 道核心题</small><div class="row" style="margin-top:10px"><button class="btn secondary" style="padding:8px 10px" onclick="startChapterPractice(${i+1})">练习模式</button><button class="btn" style="padding:8px 10px" onclick="startChapterExam(${i+1})">章节测试</button></div></div>`).join('');homeNick.textContent=state.profile.nick||'未设置';homeClass.textContent=state.profile.classCode||'SOFT2026';nickInput.value=state.profile.nick||'';classInput.value=state.profile.classCode||'SOFT2026';scoreCardPreview.textContent=state.lastScoreCard||'完成一次模拟考试或好友挑战后，这里会生成可分享的成绩卡文字。';renderLocalBoard();renderPastBatches();renderPastStats();renderHistoryExams();renderHighFreqTopics();updateStats();renderWrongStats();}
 function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
-function startDaily(){const src=allWithPast();startQuiz(shuffle(src).slice(0,Math.min(20,src.length)),'今日必刷',false)}
+function startDaily(){const src=allWithPast();startQuiz(weightedSample(src,Math.min(20,src.length),'强化'),'今日必刷 · 高频加权',false)}
 function startChapterPractice(ch){startQuiz(allQ().filter(q=>q.chapter===ch),`第${ch}章 ${SEED.chapters[ch-1]} · 练习`,false)}
 function startChapterExam(ch){const a=shuffle(allQ().filter(q=>q.chapter===ch));startQuiz(a,`第${ch}章 ${SEED.chapters[ch-1]} · 测试`,true,Math.max(20,Math.round(a.length*1.6)))}
 function startWrong(){let a=allQ().filter(q=>state.wrong.includes(q.id));if(!a.length)return alert('当前还没有错题。');startQuiz(a,'错题回炉',false)}
 function startFav(){let a=allQ().filter(q=>state.fav.includes(q.id));if(!a.length)return alert('当前还没有收藏题。');startQuiz(a,'收藏题',false)}
-function startMock(){let n=+mockCount.value;let mins=+mockMinutes.value;let a=shuffle(allWithPast()).slice(0,Math.min(n,allWithPast().length));startQuiz(a,'综合知识模拟',true,mins)}
+function startMock(){let n=+mockCount.value;let mins=+mockMinutes.value;let level=(window.mockLevel?.value||'强化');let a=weightedSample(allWithPast(),n,level);startQuiz(a,`综合知识模拟 · ${level}`,true,mins)}
+function startHighFreqPractice(){let a=weightedSample(allWithPast(),40,'冲刺');startQuiz(a,'高频重点专项 · 40题',false)}
+function startHardMock(){let n=Math.min(75,hardQ().length);let a=weightedSample(hardQ(),n,'冲刺');startQuiz(a,'高难冲刺模拟 · 75题',true,120)}
 function startQuiz(a,title,isMock=false,mins=0){if(!a.length)return alert('没有可用题目');pool=a;idx=0;mode=isMock?'mock':'practice';locked=false;state.session={};save();go('quiz');quizMeta.textContent=title;quizMeta.dataset.title=title;paletteCard.style.display=isMock?'block':'none';if(isMock){submitBtn.style.display='inline-block';startTimer(mins*60,'quizTimer',()=>submitMock())}else{submitBtn.style.display='none';clearInterval(timer);quizTimer.textContent=''}renderQ()}
 function renderQ(){const q=pool[idx];if(!q)return;qText.textContent=`${idx+1}. ${q.question}`;const given=state.session?.[q.id];locked=(mode==='practice'&&given!==undefined);qOptions.innerHTML=q.options.map((o,i)=>`<button class="opt ${given===i?'selected':''}" onclick="choose(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');qAnswer.innerHTML='';if(locked)showExplain(given);quizMeta.textContent=(quizMeta.dataset.title||'练习')+` · ${idx+1}/${pool.length}`;favBtn.textContent=state.fav.includes(q.id)?'★ 已收藏':'☆ 收藏';if(mode==='mock')renderPalette()}
 function choose(i){const q=pool[idx];if(mode==='practice'&&state.session[q.id]!==undefined)return;if(mode==='practice'&&state.session[q.id]===undefined){state.done++;if(i===q.answer)state.correct++;else if(!state.wrong.includes(q.id))state.wrong.push(q.id)}state.session[q.id]=i;save();if(mode==='practice'){locked=true;showExplain(i)}else renderQ()}
@@ -60,6 +88,27 @@ function renderReview(){mode='review';const q=pool[idx];qText.textContent=`${idx
 function startTimer(sec,el,done){clearInterval(timer);deadline=Date.now()+sec*1000;const e=document.getElementById(el);function tick(){let s=Math.max(0,Math.ceil((deadline-Date.now())/1000));let h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;e.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;if(s<=0){clearInterval(timer);done()}}tick();timer=setInterval(tick,1000)}
 function renderWrongStats(){const arr=allQ().filter(q=>state.wrong.includes(q.id));const by={};arr.forEach(q=>by[q.chapter]=(by[q.chapter]||0)+1);wrongStats.innerHTML=arr.length?`<b>共 ${arr.length} 道错题</b><p>${Object.entries(by).map(([c,n])=>`<span class="tag">第${c}章 ${n}题</span>`).join('')}</p>`:'目前没有错题。'}
 function clearWrong(){if(confirm('确认清空错题本？')){state.wrong=[];save();renderWrongStats()}}
+
+
+function renderHistoryExams(){
+  if(!window.historyExamGrid)return;
+  const arr=SEED.historyExams||[];
+  historyExamGrid.innerHTML=arr.map((x,i)=>`<div class="chapter" style="padding:12px">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><b>${x.year} · ${x.batch}</b><span class="tag">${x.priority}</span></div>
+    <small>${x.type}｜${x.label}</small>
+    <p class="notice" style="margin:8px 0">${x.note||''}</p>
+    <button class="btn ${x.priority==='最高'?'':'secondary'}" style="padding:8px 10px" onclick="openHistoryExam(${i})">进入原题练习</button>
+  </div>`).join('');
+}
+function openHistoryExam(i){
+  const x=(SEED.historyExams||[])[i]; if(!x)return;
+  window.open(x.url,'_blank','noopener');
+}
+function renderHighFreqTopics(){
+  if(!window.highFreqTopicBox)return;
+  const arr=SEED.highFrequencyTopics||[];
+  highFreqTopicBox.innerHTML=arr.map((x,i)=>`<div style="display:grid;grid-template-columns:28px 1fr auto;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)"><b>#${i+1}</b><span>${x.name}</span><span class="tag">权重${x.weight}</span></div>`).join('');
+}
 
 function renderPastBatches(){
   if(!window.pastBatchGrid)return;
